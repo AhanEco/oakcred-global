@@ -8,10 +8,20 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app.services.score_engine import process_economy, get_demo_economies, get_economy_data
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 app = FastAPI(title="OAKCRED.GLOBAL - Macro Engine", version="1.0.0")
 
+# Mount frontend directory for direct access
+# This allows visitng http://18.61.166.88:8000/ to see the dashboard
+app.mount("/dashboard", StaticFiles(directory="../frontend"), name="dashboard")
+
+@app.get("/")
+def read_root():
+    return FileResponse("../frontend/index.html")
+
 # CORS Configuration
-# In production, specify your Amplify URL (e.g. 'https://main.xxxx.amplifyapp.com')
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], # For demo, allow all. Update to Amplify URL in Production
