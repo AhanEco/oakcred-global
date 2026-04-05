@@ -27,13 +27,19 @@ jobs:
             cd ~/oakcred
             git pull origin main
             
-            # Disk Management: Resize filesystem to use the new 20GB space (Amazon Linux 2023)
+            # Disk Management: Force partition and filesystem growth
+            sudo growpart /dev/nvme0n1 1 || true
             sudo xfs_growfs / || sudo resize2fs / || true
-            df -h
             
-            # Cleanup: Free up disk space before installing heavy ML libraries
+            # CRITICAL FIX: Relocate TMPDIR to the main partition (which has 6GB free)
+            # This prevents pip from crashing on the tiny 400MB /tmp mount.
+            mkdir -p ~/oakcred/tmp
+            export TMPDIR=~/oakcred/tmp
+            
+            # Cleanup: Deep purge caches
             sudo dnf clean all || sudo apt-get clean || true
             pip cache purge || true
+            rm -rf ~/oakcred/tmp/*
             
             # Setup/Update Virtual Environment
             if [ ! -d "venv" ] || [ ! -f "venv/bin/python" ]; then
@@ -41,7 +47,7 @@ jobs:
             fi
             
             source venv/bin/activate
-            # Use --no-cache-dir to save memory/disk during installation
+            # Install with relocated TMPDIR and no-cache-dir
             pip install --no-cache-dir -r requirements.txt
             
             # Deployment: Direct Uvicorn launch
