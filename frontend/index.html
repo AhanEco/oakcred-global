@@ -50,6 +50,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // PRODUCTION: Direct link to Hyderabad Backend (ap-south-2)
+        const API_BASE = "http://18.61.166.88:8000";
+
         function App() {
             const [view, setView] = useState('landing');
             const [user, setUser] = useState(null);
@@ -61,10 +64,14 @@
             useEffect(() => {
                 const fetchEconomies = async () => {
                     try {
-                        const res = await fetch('/api/economies');
+                        const res = await fetch(`${API_BASE}/api/economies`);
                         const data = await res.json();
                         if (data.status === 'success') setEconomies(data.data);
-                    } catch (e) { console.error("API error", e); }
+                    } catch (e) { 
+                        console.error("API Link Failure: Ensure EC2 Port 8000 is open.", e);
+                        // Fallback demo data if server is unreachable
+                        setEconomies(['USA', 'CHN', 'IND', 'DEU', 'BRA']);
+                    }
                 };
                 fetchEconomies();
             }, []);
@@ -124,14 +131,14 @@
                 if (!selected) return;
                 setLoading(true);
                 try {
-                    const res = await fetch('/api/score', {
+                    const res = await fetch(`${API_BASE}/api/score`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ iso_code: selected })
                     });
                     const data = await res.json();
                     onSelect(data.data, selected);
-                } catch (e) { alert("Analysis failed"); }
+                } catch (e) { alert("Analysis failed: Server offline?"); }
                 setLoading(false);
             };
 
@@ -183,7 +190,7 @@
             const triggerSim = async (newOverrides) => {
                 setLoading(true);
                 try {
-                    const res = await fetch('/api/score', {
+                    const res = await fetch(`${API_BASE}/api/score`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ iso_code: isoCode, overrides: newOverrides })
