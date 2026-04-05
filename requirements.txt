@@ -6,9 +6,7 @@ numpy
 scikit-learn
 xgboost
 shap
-imbalanced-learn
 httpx
-optuna
 PyJWT
 joblib
 wbgapi

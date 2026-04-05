@@ -3,14 +3,15 @@
 
 echo "--- Initializing OAKCRED Server Environment ---"
 
-# 1. Create 2GB Swap File (Crucial for Micro Instances to prevent OOM)
-if [ ! -f /swapfile ]; then
-    echo "Creating 2GB Swap File for Memory Boost..."
-    sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+# 1. Create 1GB Swap File (Balanced for Disk & Memory Boost)
+if [ ! -f /swapfile ] || [ $(du -m /swapfile | cut -f1) -gt 1500 ]; then
+    echo "Creating 1GB Swap File for OOM Protection..."
+    sudo swapoff /swapfile || true
+    sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
     sudo chmod 600 /swapfile
     sudo mkswap /swapfile
     sudo swapon /swapfile
-    echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 fi
 
 # 2. Update System

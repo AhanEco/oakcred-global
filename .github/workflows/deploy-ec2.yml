@@ -27,17 +27,24 @@ jobs:
             cd ~/oakcred
             git pull origin main
             
+            # Disk Management: Resize filesystem to use the new 20GB space (Amazon Linux 2023)
+            sudo xfs_growfs / || sudo resize2fs / || true
+            df -h
+            
+            # Cleanup: Free up disk space before installing heavy ML libraries
+            sudo dnf clean all || sudo apt-get clean || true
+            pip cache purge || true
+            
             # Setup/Update Virtual Environment
             if [ ! -d "venv" ] || [ ! -f "venv/bin/python" ]; then
                 python3 -m venv venv
             fi
             
             source venv/bin/activate
-            # Use --no-cache-dir to save memory during pip install on micro instances
+            # Use --no-cache-dir to save memory/disk during installation
             pip install --no-cache-dir -r requirements.txt
             
-            # Deployment: Direct Uvicorn launch (reliable fallback for micro instances)
-            # Kill existing uvicorn process and restart
+            # Deployment: Direct Uvicorn launch
             pkill -f uvicorn || true
             nohup venv/bin/uvicorn --host 0.0.0.0 --port 8000 --app-dir backend main:app > server.log 2>&1 &
             
