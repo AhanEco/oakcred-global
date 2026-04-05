@@ -50,8 +50,17 @@ jobs:
             # Install with relocated TMPDIR and no-cache-dir
             pip install --no-cache-dir -r requirements.txt
             
-            # Deployment: Direct Uvicorn launch
-            pkill -f uvicorn || true
-            nohup venv/bin/uvicorn --host 0.0.0.0 --port 8000 --app-dir backend main:app > server.log 2>&1 &
+            # Deployment: Systemd Service Integration
+            # 1. Update the service unit file
+            sudo cp scripts/oakcred.service /etc/systemd/system/oakcred.service
+            sudo systemctl daemon-reload
             
-            echo "Deployment Complete. Access at http://${{ secrets.EC2_HOST }}:8000"
+            # 2. Enable and Restart the service
+            sudo systemctl enable oakcred
+            sudo systemctl restart oakcred
+            
+            # 3. Final Verification check
+            sleep 5
+            sudo systemctl status oakcred --no-pager
+            
+            echo "Deployment Complete. Sovereign AI Live at http://${{ secrets.EC2_HOST }}:8000"
