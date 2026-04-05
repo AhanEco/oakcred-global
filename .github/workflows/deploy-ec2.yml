@@ -28,16 +28,17 @@ jobs:
             git pull origin main
             
             # Setup/Update Virtual Environment
-            if [ ! -d "venv" ]; then
+            if [ ! -d "venv" ] || [ ! -f "venv/bin/python" ]; then
                 python3 -m venv venv
             fi
             
             source venv/bin/activate
-            pip install -r requirements.txt
+            # Use --no-cache-dir to save memory during pip install on micro instances
+            pip install --no-cache-dir -r requirements.txt
             
-            # (Optional) Re-train model if data changed? 
-            # python3 ml/trainer.py
+            # Deployment: Direct Uvicorn launch (reliable fallback for micro instances)
+            # Kill existing uvicorn process and restart
+            pkill -f uvicorn || true
+            nohup venv/bin/uvicorn --host 0.0.0.0 --port 8000 --app-dir backend main:app > server.log 2>&1 &
             
-            # Restart Application via PM2
-            # Assumes you have already run 'pm2 start venv/bin/uvicorn --name oakcred -- backend.main:app' once
-            pm2 restart oakcred || pm2 start venv/bin/uvicorn --name oakcred -- backend.main:app --host 0.0.0.0 --port 8000
+            echo "Deployment Complete. Access at http://${{ secrets.EC2_HOST }}:8000"
