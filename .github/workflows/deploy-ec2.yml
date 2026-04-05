@@ -1,0 +1,42 @@
+name: Deploy OAKCRED to AWS EC2
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - 'ml/**'
+      - 'data/**'
+      - 'requirements.txt'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/oakcred
+            git pull origin main
+            
+            # Setup/Update Virtual Environment
+            if [ ! -d "venv" ]; then
+                python3 -m venv venv
+            fi
+            
+            source venv/bin/activate
+            pip install -r requirements.txt
+            
+            # (Optional) Re-train model if data changed? 
+            # python3 ml/trainer.py
+            
+            # Restart Application via PM2
+            # Assumes you have already run 'pm2 start venv/bin/uvicorn --name oakcred -- backend.main:app' once
+            pm2 restart oakcred || pm2 start venv/bin/uvicorn --name oakcred -- backend.main:app --host 0.0.0.0 --port 8000

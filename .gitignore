@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# ML Artifacts (Generate these on-server or build-time)
+*.pkl
+backend/artifacts/
+
+# Node/Frontend
+node_modules/
+dist/
+.DS_Store
+
+# AWS/DevOps
+.aws/
+*.pem
+scripts/secrets.sh

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAKCRED.GLOBAL - Macro Policy Simulator</title>
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { 
+                        brand: { 
+                            dark: '#0A0A1F', 
+                            accent: '#38BDF8', 
+                            danger: '#F43F5E',
+                            success: '#10B981',
+                            gold: '#FBBF24',
+                            card: '#111827'
+                        } 
+                    },
+                    fontFamily: { 
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        display: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base { 
+            body { @apply bg-brand-dark text-white antialiased selection:bg-brand-accent selection:text-white; } 
+        }
+        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .gradient-text { @apply text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-indigo-400; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .grid-bg { background-image: radial-gradient(circle at 2px 2px, rgba(56, 189, 248, 0.05) 1px, transparent 0); background-size: 32px 32px; }
+        input[type="range"] { @apply accent-brand-accent; }
+    </style>
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="grid-bg">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function App() {
+            const [view, setView] = useState('landing');
+            const [user, setUser] = useState(null);
+            const [baseScoreData, setBaseScoreData] = useState(null);
+            const [simScoreData, setSimScoreData] = useState(null);
+            const [economies, setEconomies] = useState([]);
+            const [selectedISO, setSelectedISO] = useState('');
+
+            useEffect(() => {
+                const fetchEconomies = async () => {
+                    try {
+                        const res = await fetch('/api/economies');
+                        const data = await res.json();
+                        if (data.status === 'success') setEconomies(data.data);
+                    } catch (e) { console.error("API error", e); }
+                };
+                fetchEconomies();
+            }, []);
+
+            const handleLogout = () => { setUser(null); setView('landing'); };
+
+            if (view === 'login') return <LoginPage onLogin={(u) => { setUser(u); setView('selector'); }} onBack={() => setView('landing')} />;
+            if (view === 'landing') return <LandingPage onStart={() => setView('login')} />;
+            if (view === 'selector') return <EconomySelector economies={economies} onSelect={(data, iso) => { setBaseScoreData(data); setSimScoreData(data); setSelectedISO(iso); setView('results'); }} onLogout={handleLogout} />;
+            if (view === 'results') return <SimulatorDashboard initialData={baseScoreData} isoCode={selectedISO} onBack={() => setView('selector')} onLogout={handleLogout} />;
+        }
+
+        function LandingPage({ onStart }) {
+            return (
+                <div className="flex flex-col min-h-screen">
+                    <header className="px-10 py-8 flex justify-between items-center z-50">
+                        <div className="text-xl font-display font-black tracking-[0.2em] text-brand-accent italic">OAKCRED<span className="text-white">.GLOBAL</span></div>
+                        <button onClick={onStart} className="px-6 py-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition text-[10px] font-black uppercase tracking-widest">Protocol Login</button>
+                    </header>
+                    <main className="flex-grow flex flex-col items-center justify-center px-6 text-center">
+                        <div className="mb-6 px-4 py-1.5 bg-brand-accent/10 border border-brand-accent/20 rounded-full text-brand-accent text-[10px] font-black uppercase tracking-widest animate-pulse">Live Economic Simulation Active</div>
+                        <h1 className="text-7xl md:text-9xl font-display font-black leading-[0.9] mb-8 animate-fade-in uppercase">
+                            Global <br /><span className="gradient-text">Stability</span> <br /> Engine
+                        </h1>
+                        <p className="text-lg text-gray-500 max-w-2xl mb-12 leading-relaxed font-medium">
+                            The definitive platform for simulating macroeconomic shocks. Predict national stability across debt, inflation, and growth sectors.
+                        </p>
+                        <button onClick={onStart} className="px-14 py-6 bg-brand-accent text-brand-dark font-black rounded-full hover:shadow-[0_0_60px_rgba(56,189,248,0.4)] transition-all transform hover:scale-105">
+                            LAUNCH TERMINAL
+                        </button>
+                    </main>
+                </div>
+            );
+        }
+
+        function LoginPage({ onLogin, onBack }) {
+            return (
+                <div className="min-h-screen flex items-center justify-center px-4">
+                    <div className="max-w-md w-full glass-panel p-12 rounded-[3rem] animate-fade-in border-t-4 border-brand-accent">
+                        <button onClick={onBack} className="text-gray-500 mb-10 flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest">← Protocol Exit</button>
+                        <h2 className="text-4xl font-display font-black mb-2 italic">ACCESS</h2>
+                        <p className="text-gray-500 mb-10 text-xs font-medium tracking-tight">OAKCRED Secure Portal • Real-Time Macro Pipeline</p>
+                        <div className="space-y-4">
+                            <button onClick={() => onLogin({role: 'officer'})} className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-brand-accent hover:text-brand-dark transition-all">Analyst Authorization</button>
+                            <button onClick={() => onLogin({role: 'admin'})} className="w-full py-5 bg-white/5 border border-white/10 rounded-2xl font-black text-xs tracking-widest uppercase hover:bg-white/10 transition-all opacity-50">System Root (Disabled)</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function EconomySelector({ economies, onSelect, onLogout }) {
+            const [selected, setSelected] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const handleAnalyze = async () => {
+                if (!selected) return;
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/score', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ iso_code: selected })
+                    });
+                    const data = await res.json();
+                    onSelect(data.data, selected);
+                } catch (e) { alert("Analysis failed"); }
+                setLoading(false);
+            };
+
+            return (
+                <div className="min-h-screen py-24 px-8 flex flex-col items-center">
+                    <div className="max-w-2xl w-full">
+                        <div className="text-center mb-16">
+                            <h2 className="text-5xl font-display font-black tracking-tighter uppercase italic mb-2">Target <span className="text-brand-accent">Selection</span></h2>
+                            <p className="text-gray-500 text-xs uppercase tracking-widest font-bold">Select economy for structural analysis</p>
+                        </div>
+                        <div className="glass-panel p-14 rounded-[4rem] space-y-12 animate-fade-in relative overflow-hidden backdrop-blur-3xl shadow-2xl">
+                            <div className="absolute -top-20 -right-20 w-64 h-64 bg-brand-accent/10 rounded-full blur-[80px]"></div>
+                            <div>
+                                <label className="text-[10px] font-black uppercase text-gray-500 tracking-[0.2em] mb-6 block">National Identifier (ISO 3166-1)</label>
+                                <select 
+                                    className="w-full bg-white/5 border-b-2 border-brand-accent/20 p-8 text-4xl font-display font-black uppercase outline-none focus:border-brand-accent transition-all cursor-pointer hover:bg-white/[0.02]"
+                                    value={selected}
+                                    onChange={e => setSelected(e.target.value)}
+                                >
+                                    <option value="" disabled className="bg-brand-dark text-sm">Select Economy...</option>
+                                    {economies.map(e => <option key={e} value={e} className="bg-brand-dark text-lg">{e}</option>)}
+                                </select>
+                            </div>
+                            <button 
+                                onClick={handleAnalyze}
+                                disabled={!selected || loading}
+                                className="w-full py-8 bg-brand-accent text-brand-dark font-black text-2xl rounded-[2rem] hover:shadow-[0_20px_50px_rgba(56,189,248,0.3)] disabled:opacity-50 transition-all flex items-center justify-center gap-6"
+                            >
+                                {loading ? 'CALIBRATING...' : 'INITIALIZE SIMULATION'}
+                            </button>
+                        </div>
+                        <button onClick={onLogout} className="mt-12 mx-auto block text-[10px] font-black uppercase text-gray-600 hover:text-white transition">Terminate Session</button>
+                    </div>
+                </div>
+            );
+        }
+
+        function SimulatorDashboard({ initialData, isoCode, onBack, onLogout }) {
+            const [simData, setSimData] = useState(initialData);
+            const [overrides, setOverrides] = useState({
+                inflation: initialData.metrics.inflation,
+                external_debt_gni: initialData.metrics.external_debt_gni,
+                gdp_growth: initialData.metrics.gdp_growth,
+                total_reserves: initialData.metrics.total_reserves
+            });
+            const [loading, setLoading] = useState(false);
+            const debounceTimer = useRef(null);
+
+            const triggerSim = async (newOverrides) => {
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/score', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ iso_code: isoCode, overrides: newOverrides })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') setSimData(data.data);
+                } catch (e) { console.error("Sim failed", e); }
+                setLoading(false);
+            };
+
+            const handleSliderChange = (key, val) => {
+                const next = { ...overrides, [key]: parseFloat(val) };
+                setOverrides(next);
+                
+                if (debounceTimer.current) clearTimeout(debounceTimer.current);
+                debounceTimer.current = setTimeout(() => triggerSim(next), 500);
+            };
+
+            const getBandStyle = (b) => {
+                const map = { 
+                    "ROBUST": "text-brand-success border-brand-success", 
+                    "RESILIENT": "text-emerald-400 border-emerald-400", 
+                    "VULNERABLE": "text-brand-gold border-brand-gold", 
+                    "FRAGILE": "text-orange-500 border-orange-500", 
+                    "STRESSED": "text-brand-danger border-brand-danger" 
+                };
+                return map[b] || "text-gray-400 border-gray-400";
+            };
+
+            return (
+                <div className="min-h-screen py-12 px-8 max-w-7xl mx-auto animate-fade-in font-sans">
+                    <header className="flex justify-between items-center mb-12">
+                        <div className="flex items-center gap-6">
+                            <button onClick={onBack} className="text-[10px] font-black uppercase text-gray-500 hover:text-white transition">← New Target</button>
+                            <div className="h-4 w-[1px] bg-white/10"></div>
+                            <div className="text-xs font-display font-black tracking-widest text-brand-accent">OAKCRED GLOBAL ANALYTICS • {isoCode}</div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {loading && <div className="text-[9px] font-bold text-brand-accent animate-pulse">RECOMPUTING STABILITY...</div>}
+                            <button onClick={onLogout} className="text-[10px] font-black uppercase text-gray-600 hover:text-white">Sign Out</button>
+                        </div>
+                    </header>
+
+                    <div className="grid lg:grid-cols-12 gap-8 mb-8">
+                        {/* LEFT: Simulation Control */}
+                        <div className="lg:col-span-4 space-y-6">
+                            <div className="glass-panel p-10 rounded-[3rem] border border-brand-accent/20">
+                                <h3 className="text-[10px] font-black uppercase text-brand-accent mb-10 tracking-[0.2em] italic">Policy Simulation Panel</h3>
+                                
+                                <div className="space-y-10">
+                                    <SimSlider label="Inflation Control (Annual %)" val={overrides.inflation} min={-10} max={100} step={0.1} 
+                                        onChange={(v) => handleSliderChange('inflation', v)} base={initialData.metrics.inflation} />
+                                    
+                                    <SimSlider label="Sovereign Debt Stress (% of GNI)" val={overrides.external_debt_gni} min={0} max={200} step={1} 
+                                        onChange={(v) => handleSliderChange('external_debt_gni', v)} base={initialData.metrics.external_debt_gni} />
+                                    
+                                    <SimSlider label="Annual GDP Growth (%)" val={overrides.gdp_growth} min={-20} max={20} step={0.1} 
+                                        onChange={(v) => handleSliderChange('gdp_growth', v)} base={initialData.metrics.gdp_growth} />
+
+                                    <SimSlider label="FX Reserves Simulation (US$)" isLog={true} val={overrides.total_reserves} min={1e8} max={5e12} 
+                                        onChange={(v) => handleSliderChange('total_reserves', v)} base={initialData.metrics.total_reserves} />
+                                </div>
+
+                                <div className="mt-12 pt-8 border-t border-white/5">
+                                    <h4 className="text-[9px] font-black uppercase text-gray-600 mb-4 tracking-widest">Scenario Presets</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        <PresetBtn label="Debt Win" onClick={() => handleSliderChange('external_debt_gni', overrides.external_debt_gni * 0.7)} />
+                                        <PresetBtn label="Hyperinflation" onClick={() => handleSliderChange('inflation', 80)} />
+                                        <PresetBtn label="Growth Surge" onClick={() => handleSliderChange('gdp_growth', 12)} />
+                                        <PresetBtn label="Reserve Crash" onClick={() => handleSliderChange('total_reserves', initialData.metrics.total_reserves * 0.1)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* RIGHT: Visual Output */}
+                        <div className="lg:col-span-8 flex flex-col gap-8">
+                            <div className="grid md:grid-cols-2 gap-8 h-full">
+                                <div className="glass-panel p-12 rounded-[4rem] flex flex-col items-center justify-center text-center relative group overflow-hidden">
+                                     <div className={`absolute inset-0 bg-brand-accent/5 opacity-0 group-hover:opacity-100 transition-opacity`}></div>
+                                     <div className="relative z-10">
+                                         <div className="text-[120px] font-display font-black leading-none tracking-tighter italic mb-4">{simData.score}</div>
+                                         <div className={`px-10 py-2 border-2 rounded-full text-[14px] font-black tracking-[0.4em] uppercase mb-8 ${getBandStyle(simData.band)}`}>
+                                             {simData.band}
+                                         </div>
+                                         <div className="flex items-center justify-center gap-4">
+                                            {simData.score > initialData.score ? 
+                                                <span className="text-brand-success font-black text-sm">↑ +{simData.score - initialData.score} RELATIVE TO BASE</span> :
+                                                (simData.score < initialData.score ? <span className="text-brand-danger font-black text-sm">↓ {simData.score - initialData.score} RELATIVE TO BASE</span> : null)
+                                            }
+                                         </div>
+                                     </div>
+                                </div>
+
+                                <div className="glass-panel p-10 rounded-[3rem] flex flex-col justify-between">
+                                    <h3 className="text-[10px] font-black uppercase text-gray-500 mb-8 tracking-widest">Structural Pillar Health</h3>
+                                    <div className="space-y-6">
+                                        {simData.radar_data.map(r => (
+                                            <div key={r.category}>
+                                                <div className="flex justify-between items-end mb-2">
+                                                    <span className="text-[9px] font-bold uppercase text-gray-400 tracking-widest">{r.category}</span>
+                                                    <span className="text-base font-display font-black italic">{r.value}</span>
+                                                </div>
+                                                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-brand-accent transition-all duration-700" style={{width: `${r.value}%`}}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* SHAP Insights */}
+                            <div className="glass-panel p-14 rounded-[4rem]">
+                                <div className="flex justify-between items-end mb-16">
+                                    <h3 className="text-3xl font-display font-black uppercase italic tracking-tighter">Impact <span className="text-brand-accent">Calibration</span></h3>
+                                    <div className="text-[10px] font-black uppercase text-gray-600 tracking-widest">AI EXPLAINABILITY MODULE 1.2</div>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-16">
+                                    <div className="space-y-10">
+                                        <h4 className="text-[10px] font-black uppercase text-brand-success tracking-[0.3em] flex items-center gap-4">Stability Anchors<div className="flex-grow h-[1px] bg-brand-success/10"></div></h4>
+                                        {simData.shap.positive.map((f, i) => (
+                                            <div key={i} className="flex justify-between items-start gap-8">
+                                                <div className="flex-grow">
+                                                    <span className="text-lg font-bold block mb-1">{f.factor_name}</span>
+                                                    <p className="text-xs text-gray-500 leading-relaxed font-medium">{f.reason}</p>
+                                                </div>
+                                                <span className="text-[10px] font-black text-brand-success bg-brand-success/10 px-3 py-1 rounded-lg border border-brand-success/20">{f.score_impact}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-10">
+                                        <h4 className="text-[10px] font-black uppercase text-brand-danger tracking-[0.3em] flex items-center gap-4">Fracture Risks<div className="flex-grow h-[1px] bg-brand-danger/10"></div></h4>
+                                        {simData.shap.negative.map((f, i) => (
+                                            <div key={i} className="flex justify-between items-start gap-8 opacity-70">
+                                                <div className="flex-grow">
+                                                    <span className="text-lg font-bold block mb-1">{f.factor_name}</span>
+                                                    <p className="text-xs text-gray-500 leading-relaxed font-medium">{f.reason}</p>
+                                                </div>
+                                                <span className="text-[10px] font-black text-brand-danger bg-brand-danger/10 px-3 py-1 rounded-lg border border-brand-danger/20">{f.score_impact}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function SimSlider({ label, val, min, max, step=1, onChange, base, isLog=false }) {
+            const displayVal = isLog ? (val/1e9).toFixed(1) + 'B' : val.toFixed(1);
+            const baseDisplay = isLog ? (base/1e9).toFixed(1) + 'B' : base.toFixed(1);
+            
+            return (
+                <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                        <label className="text-[10px] font-bold uppercase text-gray-400 tracking-wider font-display">{label}</label>
+                        <span className="text-xl font-display font-black text-brand-accent tracking-tighter italic">{displayVal}</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        className="w-full h-1 bg-white/5 rounded-full appearance-none cursor-pointer"
+                        min={min} max={max} step={step} 
+                        value={val} 
+                        onChange={e => onChange(e.target.value)} 
+                    />
+                    <div className="flex justify-between items-center text-[8px] font-black uppercase text-gray-600 tracking-widest italic">
+                        <span>Min: {isLog ? '0.1B' : min}</span>
+                        <span>Base: {baseDisplay}</span>
+                        <span>Max: {isLog ? '5000B' : max}</span>
+                    </div>
+                </div>
+            );
+        }
+
+        function PresetBtn({ label, onClick }) {
+            return (
+                <button 
+                    onClick={onClick}
+                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:border-brand-accent transition-all"
+                >
+                    {label}
+                </button>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
