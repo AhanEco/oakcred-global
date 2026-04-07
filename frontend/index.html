@@ -6,38 +6,9 @@
     <title>OAKCRED.GLOBAL - Macro Policy Simulator</title>
     <!-- Tailwind is handled by Vite/PostCSS, but keeping CDN for quick styling transition if needed -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { 
-                        brand: { 
-                            dark: '#0A0A1F', 
-                            accent: '#38BDF8', 
-                            danger: '#F43F5E',
-                            success: '#10B981',
-                            gold: '#FBBF24',
-                            card: '#111827'
-                        } 
-                    },
-                    fontFamily: { 
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        display: ['JetBrains Mono', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <style type="text/tailwindcss">
-        @layer base { 
-            body { @apply bg-brand-dark text-white antialiased selection:bg-brand-accent selection:text-white; } 
-        }
-        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .gradient-text { @apply text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-indigo-400; }
+    <style>
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .grid-bg { background-image: radial-gradient(circle at 2px 2px, rgba(56, 189, 248, 0.05) 1px, transparent 0); background-size: 32px 32px; }
-        input[type="range"] { @apply accent-brand-accent; }
     </style>
 </head>
 <body class="grid-bg">
