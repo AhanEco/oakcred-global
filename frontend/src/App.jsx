@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
-// PRODUCTION: Direct link to Hyderabad Backend (ap-south-2)
-const API_BASE = "http://18.61.166.88:8000";
+// PRODUCTION: Secure Tunnel to Hyderabad Backend
+const API_BASE = "https://pressing-heating-discuss-symposium.trycloudflare.com";
 
 export default function App() {
     const [view, setView] = useState('landing');
