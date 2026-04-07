@@ -88,7 +88,10 @@ function EconomySelector({ economies, onSelect, onLogout }) {
             });
             const data = await res.json();
             onSelect(data.data, selected);
-        } catch (e) { alert("Analysis failed: Server offline?"); }
+        } catch (e) { 
+            console.error("Analysis Error:", e);
+            alert(`Analysis failed: ${e.message || "Server offline?"}`); 
+        }
         setLoading(false);
     };
 
